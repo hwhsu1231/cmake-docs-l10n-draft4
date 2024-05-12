@@ -12,6 +12,9 @@ on:
       - synchronize
       - reopened
       # - closed
+  push:
+    branches:
+      - main
 
 jobs:
   detect-change:
