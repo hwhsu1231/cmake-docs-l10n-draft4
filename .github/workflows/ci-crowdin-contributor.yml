@@ -1,0 +1,88 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE.txt for details.
+
+name: ci-crowdin-contributor
+
+on:
+  schedule:
+    - cron: '0 0  1 * *'  # Runs at 00:00 on day  1 of the month in UTC zone
+    - cron: '0 0 15 * *'  # Runs at 00:00 on day 15 of the month in UTC zone
+  workflow_dispatch:
+
+jobs:
+  crowdin-contributor:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+    steps:
+      - name: Check Contexts and Secrets
+        run: |
+          echo "[Contexts]"
+          echo "github.job = ${{ github.job }}"
+          echo "github.ref = ${{ github.ref }}"
+          echo "github.ref_name = ${{ github.ref_name }}"
+          echo "github.event_name = ${{ github.event_name }}"
+          echo "[Secrets]"
+          echo "secrets.GITHUB_TOKEN = ${{ secrets.GITHUB_TOKEN }}"
+          echo "secrets.CROWDIN_PERSONAL_TOKEN = ${{ secrets.CROWDIN_PERSONAL_TOKEN }}"
+          echo "secrets.APP_ID = ${{ secrets.APP_ID }}"
+          echo "secrets.APP_PRIVATE_KEY = ${{ secrets.APP_PRIVATE_KEY }}"
+
+      - name: Get the GitHub App's Token
+        id: ggat
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout to '${{ github.ref }}'
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ steps.ggat.outputs.token }}
+
+      - name: Update Crowdin Contributors Table
+        env:
+          CROWDIN_PROJECT_ID: '581765'
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+        uses: andrii-bodnar/action-crowdin-contributors@v1.0.3
+        with:
+          contributors_per_line: 8
+          max_contributors: 32
+          image_size: 50
+          min_words_contributed: 256
+          include_languages: true
+          files: docs/CROWDIN_CONTRIBUTORS.md
+
+      - name: Get the Current Job's ID
+        id: gcji
+        uses: Tiryoh/gha-jobid-action@v1
+        with:
+          github_token: ${{ steps.ggat.outputs.token }}
+          job_name: '${{ github.job }}'
+          per_page: 100
+
+      # https://stackoverflow.com/a/74071223/16265240
+      - name: Add and Commit the Change
+        id: acc
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: .
+          author_name: docs-l10n[bot]
+          author_email: 157310748+docs-l10n[bot]@users.noreply.github.com
+          pull: '--rebase --autostash'
+          message: |
+            docs: Update Crowdin Contributors Table
+
+            Created by GitHub Workflows:
+            - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
+            - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - Job: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.gcji.outputs.job_id }}
+
+      - name: Check Outputs of the Commit
+        if: steps.acc.outputs.committed == 'true'
+        shell: bash
+        run: |
+          echo "Commit's URL = ${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.acc.outputs.commit_long_sha }}"
+          echo "Commit's SHA = ${{ steps.acc.outputs.commit_long_sha }}"

@@ -1,0 +1,82 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE.txt for details.
+
+name: ci-crowdin-upload-pot
+
+on:
+  # Triggers the workflow when a pull request modifying any file in 'l10n/' is closed on the 'source' branch.
+  pull_request:
+    types: 
+      - 'closed'
+    branches: 
+      - 'source'
+    paths:
+      - 'l10n/**'
+  # Allows for the workflow to be manually started through the GitHub UI
+  workflow_dispatch:
+    inputs:
+      VERSION:
+        description: 'Set VERSION input'
+        required: true
+        type: string
+        default: 'git-master'
+
+jobs:
+  pr-version:
+    if: (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'crowdin'))
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.evprt.outputs.VERSION }}
+      POT_CHANGE: ${{ steps.filter.outputs.pot }}
+    steps:
+      - name: Extract VERSION from Pull Request Title
+        id: evprt
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          VERSION_REGEX="pot\(([^)]+)\):"
+          if [[ $PR_TITLE =~ $VERSION_REGEX ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            echo "Extracted version: $VERSION"
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "Version format not found in PR title"
+            echo "VERSION=" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      - name: Filter Changes in the Pull Request
+        id: filter
+        if: steps.evprt.outputs.VERSION != ''
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            pot:
+              - 'l10n/${{ steps.evprt.outputs.VERSION }}/pot/**'
+      - name: Check Outputs of paths-filter
+        if: steps.filter.outputs.pot == 'true'
+        run: |
+          echo "steps.filter.outputs.pot = ${{ steps.filter.outputs.pot }}"
+          echo "steps.filter.outputs.pot_count = ${{ steps.filter.outputs.pot_count }}"
+          echo "steps.filter.outputs.pot_files = ${{ steps.filter.outputs.pot_files }}"
+
+  pr-merged:
+    if: (needs.pr-version.outputs.VERSION != '' && needs.pr-version.outputs.POT_CHANGE == 'true')
+    needs: pr-version
+    secrets: inherit
+    concurrency:
+      group: ${{ github.workflow }}-${{ needs.pr-version.outputs.VERSION }}
+      cancel-in-progress: true
+    uses: ./.github/workflows/use-crowdin-upload-pot.yml
+    with:
+      VERSION: ${{ needs.pr-version.outputs.VERSION }}
+      ENABLE_JOB: true
+
+  single:
+    if: (github.event_name == 'workflow_dispatch')
+    secrets: inherit
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.inputs.VERSION }}
+      cancel-in-progress: true
+    uses: ./.github/workflows/use-crowdin-upload-pot.yml
+    with:
+      VERSION: ${{ github.event.inputs.VERSION }}
+      ENABLE_JOB: true
