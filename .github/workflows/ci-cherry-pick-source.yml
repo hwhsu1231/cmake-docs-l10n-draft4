@@ -64,8 +64,10 @@ jobs:
               - 'CMakePresets.json'
               - 'languages.json'
             document:
-              - 'docs/'
-              - ''
+              - 'docs/ACKNOWLEDGEMENTS.md'
+              - 'docs/CONTRIBUTING.md'
+              - 'docs/MAINTAINING.md'
+              - 'README.md'
             workflow:
               - '.github/workflows/matrix.json'
               - '.github/workflows/*.yml'
