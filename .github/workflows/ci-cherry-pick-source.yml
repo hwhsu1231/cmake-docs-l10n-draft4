@@ -83,11 +83,33 @@ jobs:
           echo "steps.filter.outputs.document_count = ${{ steps.filter.outputs.document_count }}"
           echo "steps.filter.outputs.workflow_count = ${{ steps.filter.outputs.workflow_count }}"
 
-  cherry-pick-source-version:
-    needs: [ 'detect-change' ]
-    if: (needs.detect-change.outputs.SCRIPT_CHANGE != 0) ||
+  get-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.rvm.outputs.VERSION }}
+    steps:
+      - name: Checkout to '${{ github.ref }}'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Read VERSION from matrix.json
+        id: rvm
+        run: |
+          FILTER=".include | map(.VERSION)"
+          VERSION=$(jq -c "$FILTER" .github/workflows/matrix.json)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION:"
+          echo "$VERSION" | jq "."
+
+  cherry-pick-source:
+    needs: [ 'detect-change', 'get-matrix' ]
+    if: (needs.detect-change.outputs.SCRIPT_CHANGE   != 0) ||
         (needs.detect-change.outputs.WORKFLOW_CHANGE != 0)
     runs-on: ubuntu-latest
+    strategy:
+      matrix: 
+        VERSION: ${{ fromJson(needs.get-matrix.outputs.VERSION) }}
+      fail-fast: false
     steps:
       - name: Check Contexts
         shell: bash
@@ -109,17 +131,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-      - name: Cherry Pick into 'source/git-master' branch
+      - name: Cherry Pick into 'source/${{ matrix.VERSION }}' branch
         uses: carloscastrojumo/github-cherry-pick-action@v1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: 'source/git-master'
+          branch: 'source/${{ matrix.VERSION }}'
           labels: 'cherry-pick, automerge'
           force: true
           title: |
-            {old_title}
+            [cherry-pick] {old_title}
           body: |
-            {pull_request.body}
-
-            Cherry-picked from #{old_pull_request_id}
-
+            Cherry picking #{old_pull_request_id} onto this branch
