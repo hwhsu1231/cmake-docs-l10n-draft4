@@ -1,0 +1,31 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE.txt for details.
+
+name: ci-automerge-pr
+
+on:
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+      - synchronize
+      - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
+
+jobs:
+  automerge-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Automerge the Pull Request
+        id: apr
+        uses: pascalgn/automerge-action@v0.16.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_LABELS: 'automerge'
+          MERGE_METHOD: 'squash'
+          MERGE_COMMIT_MESSAGE: 'pull-request-title-and-description'
+          UPDATE_LABELS: 'automerge'
+          UPDATE_METHOD: 'rebase'
