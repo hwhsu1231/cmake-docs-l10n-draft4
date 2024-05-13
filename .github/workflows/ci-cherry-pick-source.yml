@@ -12,9 +12,9 @@ on:
       # - synchronize   # For testing
       # - reopened      # For testing
       - closed          # Final Usage
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
 
 jobs:
   detect-change:
@@ -83,7 +83,7 @@ jobs:
           echo "steps.filter.outputs.document_count = ${{ steps.filter.outputs.document_count }}"
           echo "steps.filter.outputs.workflow_count = ${{ steps.filter.outputs.workflow_count }}"
 
-  cherry-pick-main:
+  cherry-pick-source-version:
     needs: [ 'detect-change' ]
     if: (needs.detect-change.outputs.SCRIPT_CHANGE != 0) ||
         (needs.detect-change.outputs.WORKFLOW_CHANGE != 0)
@@ -105,3 +105,15 @@ jobs:
           echo "github.head_ref = ${{ github.head_ref }}"
           echo "github.event.before = ${{ github.event.before }}"
           echo "github.sha = ${{ github.sha }}"
+      - name: Checkout to '${{ github.ref }}'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Cherry Pick into 'source/git-master' branch
+        uses: carloscastrojumo/github-cherry-pick-action@v1.0
+        with:
+          branch: 'source/git-master'
+          labels: 'cherry-pick'
+          force: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
