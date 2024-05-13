@@ -85,9 +85,8 @@ jobs:
 
   cherry-pick-main:
     needs: [ 'detect-change' ]
-    if: (needs.detect-change.output.SCRIPT_CHANGE != 0) ||
-        (needs.detect-change.output.DOCUMENT_CHANGE != 0) ||
-        (needs.detect-change.output.WORKFLOW_CHANGE != 0)
+    if: (needs.detect-change.outputs.SCRIPT_CHANGE != 0) ||
+        (needs.detect-change.outputs.WORKFLOW_CHANGE != 0)
     runs-on: ubuntu-latest
     steps:
       - name: Check Contexts
