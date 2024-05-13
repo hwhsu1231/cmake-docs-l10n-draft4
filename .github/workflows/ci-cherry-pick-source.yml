@@ -117,9 +117,6 @@ jobs:
           labels: 'cherry-pick, automerge'
           force: true
           title: |
-            {old_title}
+            [cherry-pick] {old_title}
           body: |
-            {pull_request.body}
-
-            Cherry-picked from #{old_pull_request_id}
-
+            Cherry picking #{old_pull_request_id} onto this branch
