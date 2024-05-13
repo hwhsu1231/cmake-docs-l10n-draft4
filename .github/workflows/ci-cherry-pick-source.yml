@@ -112,8 +112,14 @@ jobs:
       - name: Cherry Pick into 'source/git-master' branch
         uses: carloscastrojumo/github-cherry-pick-action@v1.0
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           branch: 'source/git-master'
           labels: 'cherry-pick, automerge'
           force: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          title: |
+            {old_title}
+          body: |
+            {pull_request.body}
+
+            Cherry-picked from #{old_pull_request_id}
 
