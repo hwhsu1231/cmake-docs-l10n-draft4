@@ -26,6 +26,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MERGE_LABELS: 'automerge'
           MERGE_METHOD: 'squash'
-          MERGE_COMMIT_MESSAGE: 'pull-request-title-and-description'
+          # MERGE_COMMIT_MESSAGE: 'pull-request-title-and-description'
+          MERGE_COMMIT_MESSAGE: |
+            {pullRequest.title} (#{pullRequest.number})
+
+            {pullRequest.body}
           UPDATE_LABELS: 'automerge'
           UPDATE_METHOD: 'rebase'
