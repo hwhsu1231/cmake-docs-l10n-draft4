@@ -113,7 +113,7 @@ jobs:
         uses: carloscastrojumo/github-cherry-pick-action@v1.0
         with:
           branch: 'source/git-master'
-          labels: 'cherry-pick'
+          labels: 'cherry-pick, automerge'
           force: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
