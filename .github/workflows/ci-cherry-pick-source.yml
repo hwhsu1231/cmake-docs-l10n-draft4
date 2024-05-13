@@ -8,10 +8,10 @@ on:
     branches:
       - main
     types:
-      - opened
-      - synchronize
-      - reopened
-      # - closed
+      # - opened        # For testing
+      # - synchronize   # For testing
+      # - reopened      # For testing
+      - closed          # Final Usage
   push:
     branches:
       - main
@@ -82,3 +82,27 @@ jobs:
           echo "steps.filter.outputs.script_count   = ${{ steps.filter.outputs.script_count }}"
           echo "steps.filter.outputs.document_count = ${{ steps.filter.outputs.document_count }}"
           echo "steps.filter.outputs.workflow_count = ${{ steps.filter.outputs.workflow_count }}"
+
+  cherry-pick-main:
+    needs: [ 'detect-change' ]
+    if: (needs.detect-change.output.SCRIPT_CHANGE != 0) ||
+        (needs.detect-change.output.DOCUMENT_CHANGE != 0) ||
+        (needs.detect-change.output.WORKFLOW_CHANGE != 0)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Contexts
+        shell: bash
+        run: |
+          echo "[Contexts]"
+          echo "github.job = ${{ github.job }}"
+          echo "github.ref = ${{ github.ref }}"
+          echo "github.ref_name = ${{ github.ref_name }}"
+          echo "github.event.action = ${{ github.event.action }}"
+          echo "github.event.number = ${{ github.event.number }}"
+          echo "github.event_name = ${{ github.event_name }}"
+          echo "github.event.pull_request.base.ref = ${{ github.event.pull_request.base.ref }}"
+          echo "github.event.pull_request.head.ref = ${{ github.event.pull_request.head.ref }}"
+          echo "github.base_ref = ${{ github.base_ref }}"
+          echo "github.head_ref = ${{ github.head_ref }}"
+          echo "github.event.before = ${{ github.event.before }}"
+          echo "github.sha = ${{ github.sha }}"
