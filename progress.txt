@@ -1,9 +1,0 @@
-Japanese(ja):
-  Translated: 85% (Words: 1499/1748, Phrases: 256/288)
-  Approved: 0% (Words: 0/1748, Phrases: 0/288)
-Chinese Simplified(zh-CN):
-  Translated: 87% (Words: 1535/1748, Phrases: 254/288)
-  Approved: 0% (Words: 0/1748, Phrases: 0/288)
-Chinese Traditional(zh-TW):
-  Translated: 7% (Words: 137/1748, Phrases: 26/288)
-  Approved: 0% (Words: 0/1748, Phrases: 0/288)
