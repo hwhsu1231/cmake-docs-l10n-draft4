@@ -83,11 +83,35 @@ jobs:
           echo "steps.filter.outputs.document_count = ${{ steps.filter.outputs.document_count }}"
           echo "steps.filter.outputs.workflow_count = ${{ steps.filter.outputs.workflow_count }}"
 
-  cherry-pick-source-version:
-    needs: [ 'detect-change' ]
-    if: (needs.detect-change.outputs.SCRIPT_CHANGE != 0) ||
+  get-matrix:
+    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.TYPE == 'matrix') ||
+        (github.event_name == 'schedule')
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.rvm.outputs.VERSION }}
+    steps:
+      - name: Checkout to '${{ github.ref }}'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Read VERSION from matrix.json
+        id: rvm
+        run: |
+          FILTER=".include | map(.VERSION)"
+          VERSION=$(jq -c "$FILTER" .github/workflows/matrix.json)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION:"
+          echo "$VERSION" | jq "."
+
+  cherry-pick-source:
+    needs: [ 'detect-change', 'get-matrix' ]
+    if: (needs.detect-change.outputs.SCRIPT_CHANGE   != 0) ||
         (needs.detect-change.outputs.WORKFLOW_CHANGE != 0)
     runs-on: ubuntu-latest
+    strategy:
+      matrix: 
+        VERSION: ${{ fromJson(needs.get-matrix.outputs.VERSION) }}
+      fail-fast: false
     steps:
       - name: Check Contexts
         shell: bash
